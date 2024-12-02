@@ -13,17 +13,16 @@ const schema = a.schema({
     })
     .authorization((allow) => [allow.owner()]),
 
-
-    Messages: a
+  Messages: a
     .model({
       text: a.string().required(),
       audioUrl: a.string(),
       userId: a.id(),
       language: a.string(),
       status: a.string(),
-      createdAt: a.string()
+      createdAt: a.string(),
     })
-    .authorization((allow) => [allow.owner()])
+    .authorization((allow) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -37,6 +36,7 @@ export const data = defineData({
     },
   },
 });
+
 
 /*== STEP 2 ===============================================================
 Go to your frontend source code. From your client-side code, generate a

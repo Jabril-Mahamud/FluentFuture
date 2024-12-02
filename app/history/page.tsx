@@ -1,163 +1,61 @@
 'use client';
+import { useState, useEffect } from "react";
+import { generateClient } from "aws-amplify/data";
+import { getCurrentUser } from "aws-amplify/auth";
+import type { Schema } from "../../amplify/data/resource";
 
-import React, { useState, useEffect } from 'react';
-import { Schema } from '../../amplify/data/resource';
-import { 
-  useReactTable, 
-  getCoreRowModel, 
-  flexRender,
-  createColumnHelper 
-} from '@tanstack/react-table';
-import { generateClient } from 'aws-amplify/api';
+const client = generateClient<Schema>();
 
-export default function MessagesDataGrid() {
-  const client = generateClient<Schema>();
-  const [messages, setMessages] = useState<Schema['Messages']['type'][]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function MessagesList() {
+  const [messages, setMessages] = useState<Schema["Messages"]["type"][]>([]);
+  const [error, setError] = useState<Error | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch messages on component mount
   useEffect(() => {
-    async function fetchMessages() {
+    const fetchUserAndMessages = async () => {
       try {
-        const { data, errors } = await client.models.Messages.list({
-          // Include all fields to match the full type
-          selectionSet: [
-            'id', 
-            'text', 
-            'userId', 
-            'language', 
-            'createdAt', 
-            'updatedAt', 
-            'audioUrl', 
-            'status',
-            'owner'
-          ],
-          limit: 100
+        // Get the current authenticated user
+        const { userId } = await getCurrentUser();
+        setUserId(userId);
+
+        // Fetch messages filtered by the user's ID
+        const { data: items, errors } = await client.models.Messages.list({
+          filter: {
+            userId: { eq: userId },
+          },
         });
 
-        if (errors) {
-          console.error('Errors fetching messages', errors);
-          return;
+        // Handle GraphQL errors
+        if (errors && errors.length > 0) {
+          throw new Error(errors.map((err) => err.message).join(", "));
         }
 
-        // Ensure all required fields are present
-        const completeMessages = data.map(msg => ({
-          ...msg,
-          updatedAt: msg.updatedAt || new Date().toISOString(),
-          audioUrl: msg.audioUrl || undefined,
-          status: msg.status || undefined,
-          owner: msg.owner || undefined
-        }));
-
-        setMessages(completeMessages);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching messages', error);
-        setIsLoading(false);
+        setMessages(items);
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
       }
-    }
+    };
 
-    fetchMessages();
+    fetchUserAndMessages();
   }, []);
 
-  // Column definition
-  const columnHelper = createColumnHelper<Schema['Messages']['type']>();
-  const columns = [
-    columnHelper.accessor('id', {
-      header: 'ID',
-      cell: info => info.getValue()
-    }),
-    columnHelper.accessor('text', {
-      header: 'Message',
-      cell: info => info.getValue()
-    }),
-    columnHelper.accessor('language', {
-      header: 'Language',
-      cell: info => info.getValue() || 'N/A'
-    }),
-    columnHelper.accessor('createdAt', {
-      header: 'Created',
-      cell: info => {
-        const date = info.getValue();
-        return date ? new Date(date).toLocaleString() : 'N/A';
-      }
-    })
-  ];
-
-  // Create table instance
-  const table = useReactTable({
-    data: messages,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  });
-
-  // Render loading state
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="spinner-border" role="status">
-          <span className="sr-only">Loading...</span>
-        </div>
-      </div>
-    );
+  if (error) {
+    return <p>Error loading data: {error.message}</p>;
   }
 
-  // Render empty state
-  if (messages.length === 0) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-xl text-gray-600">No messages found</p>
-      </div>
-    );
-  }
-
-  // Render data grid
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Messages</h1>
-      <div className="overflow-x-auto">
-        <table className="w-full bg-white shadow-md rounded-lg overflow-hidden">
-          <thead className="bg-gray-100 border-b">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th 
-                    key={header.id} 
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {table.getRowModel().rows.map(row => (
-              <tr 
-                key={row.id} 
-                className="hover:bg-gray-50 transition-colors duration-200"
-              >
-                {row.getVisibleCells().map(cell => (
-                  <td 
-                    key={cell.id} 
-                    className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"
-                  >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div>
+      <h1>Message History</h1>
+      {messages.length === 0 ? (
+        <p>No messages found.</p>
+      ) : (
+        <ul>
+          {messages.map(({ id, text }) => (
+            <li key={id}>{text}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
