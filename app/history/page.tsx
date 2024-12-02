@@ -20,8 +20,18 @@ export default function MessagesDataGrid() {
     async function fetchMessages() {
       try {
         const { data, errors } = await client.models.Messages.list({
-          // Optional: add filtering or pagination
-          selectionSet: ['id', 'text', 'userId', 'language', 'createdAt'],
+          // Include all fields to match the full type
+          selectionSet: [
+            'id', 
+            'text', 
+            'userId', 
+            'language', 
+            'createdAt', 
+            'updatedAt', 
+            'audioUrl', 
+            'status',
+            'owner'
+          ],
           limit: 100
         });
 
@@ -30,7 +40,16 @@ export default function MessagesDataGrid() {
           return;
         }
 
-        setMessages(data);
+        // Ensure all required fields are present
+        const completeMessages = data.map(msg => ({
+          ...msg,
+          updatedAt: msg.updatedAt || new Date().toISOString(),
+          audioUrl: msg.audioUrl || undefined,
+          status: msg.status || undefined,
+          owner: msg.owner || undefined
+        }));
+
+        setMessages(completeMessages);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching messages', error);
