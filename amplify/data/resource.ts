@@ -22,7 +22,11 @@ const schema = a.schema({
       status: a.string(),
       createdAt: a.string(),
     })
-    .authorization((allow) => [allow.owner()]),
+    .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.guest(),
+      allow.authenticated() // Add this line to allow all authenticated users to read
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
