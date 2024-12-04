@@ -7,7 +7,7 @@ import {
   TableRow, 
   Loader
 } from '@aws-amplify/ui-react';
-import type { Schema } from "../../amplify/data/resource";
+import type { Schema } from "../amplify/data/resource";
 
 interface MessagesDataGridProps {
   messages: Schema["Messages"]["type"][];
