@@ -8,11 +8,11 @@ const speaker = () => {
       <h2>Speaker</h2>
 
       <FileUploader
-        acceptedFileTypes={["image/*"]}
-        path={({ identityId }) => `protected/${identityId}/`}
-        maxFileCount={1}
-        isResumable
-      />
+      acceptedFileTypes={['image/*']}
+      path="public/"
+      maxFileCount={1}
+      isResumable
+    />
     </div>
   );
 };
