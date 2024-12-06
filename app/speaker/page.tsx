@@ -8,7 +8,6 @@ import "@aws-amplify/ui-react/styles.css";
 const Speaker: React.FC = () => {
   const { user } = useAuthenticator((context) => [context.user]);
 
-  // Create a unique path based on user ID
   const userUploadPath = user 
     ? `private/${user.userId}/uploads` 
     : 'public/uploads';
