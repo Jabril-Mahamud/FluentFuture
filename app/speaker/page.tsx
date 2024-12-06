@@ -8,9 +8,9 @@ import "@aws-amplify/ui-react/styles.css";
 const Speaker: React.FC = () => {
   const { user } = useAuthenticator((context) => [context.user]);
 
-  const userUploadPath = user 
-    ? `private/${user.userId}/uploads` 
-    : 'public/uploads';
+  const userUploadPath = user
+  ? `private/${user.userId}/uploads` // Remove leading '/'
+  : 'public/uploads'; // Remove leading '/'
 
   return (
     <div>
