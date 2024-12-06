@@ -2,15 +2,23 @@
 import React from "react";
 import { FileUploader } from "@aws-amplify/ui-react-storage";
 import { Amplify } from 'aws-amplify';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import "@aws-amplify/ui-react/styles.css";
 
 const Speaker: React.FC = () => {
+  const { user } = useAuthenticator((context) => [context.user]);
+
+  // Create a unique path based on user ID
+  const userUploadPath = user 
+    ? `private/${user.userId}/uploads` 
+    : 'public/uploads';
+
   return (
     <div>
       <h2>Speaker Upload</h2>
       <FileUploader
-        acceptedFileTypes={['image/*', 'application/pdf']} // More specific for file types
-        path="public/uploads"
+        acceptedFileTypes={['image/*', 'application/pdf']}
+        path={userUploadPath}
         maxFileCount={5}
         autoUpload={true}
         isResumable
