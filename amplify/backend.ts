@@ -8,5 +8,6 @@ defineBackend({
   auth,
   data,
   storage,
-  sayHello
+  sayHello,
+  
 });
