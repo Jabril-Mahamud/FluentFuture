@@ -14,16 +14,16 @@ const schema = a.schema({
     .authorization((allow) => [allow.owner()]),
 
 
-    Messages: a
-    .model({
-      text: a.string().required(),
-      audioUrl: a.string(),
-      userId: a.id(),
-      language: a.string(),
-      status: a.string(),
-      createdAt: a.string()
-    })
-    .authorization((allow) => [allow.owner()])
+  Messages: a
+  .model({
+    text: a.string().required(),
+    audioUrl: a.string(),
+    userId: a.id(),
+    language: a.string(),
+    status: a.string(),
+    createdAt: a.string()
+  })
+  .authorization((allow) => [allow.owner(),allow.guest()])
 });
 
 export type Schema = ClientSchema<typeof schema>;
