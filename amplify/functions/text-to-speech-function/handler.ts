@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client();
-const BUCKET_NAME = process.env.STORAGE_AMPLIFYTEAMDRIVE_BUCKET_NAME;
+const BUCKET_NAME = process.env.BUCKET_NAME;
 
 export const handler = async (event: any) => {
   try {
