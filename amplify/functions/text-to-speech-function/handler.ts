@@ -7,17 +7,29 @@ const BUCKET_NAME = process.env.BUCKET_NAME;
 
 export const handler = async (event: any) => {
   try {
-    const body = JSON.parse(event.body);
+    // Validate environment variables
+    if (!process.env.ELEVENLABS_API_KEY) {
+      throw new Error("ElevenLabs API key is not set in environment variables.");
+    }
+    if (!BUCKET_NAME) {
+      throw new Error("S3 bucket name is not set in environment variables.");
+    }
 
+    // Parse and validate request body
+    const body = JSON.parse(event.body);
     const { text, voiceId = "default" } = body;
+
     if (!text) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "Text is required." }),
+        body: JSON.stringify({ message: "Text is required in the request body." }),
       };
     }
 
-    // ElevenLabs API Call
+    // Log the incoming request for debugging
+    console.log("Received request:", { text, voiceId });
+
+    // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       { text },
@@ -26,36 +38,47 @@ export const handler = async (event: any) => {
           "Content-Type": "application/json",
           "xi-api-key": process.env.ELEVENLABS_API_KEY,
         },
-        responseType: "arraybuffer", // Ensure response is received as binary data
+        responseType: "arraybuffer", // Ensure response is binary
       }
     );
 
-    // Generate a unique filename for the audio file
+    console.log("ElevenLabs API response received.");
+
+    // Generate a unique filename and S3 key
     const fileName = `audio_${uuidv4()}.mp3`;
-    const s3Key = `audio/${fileName}`; // S3 key includes the folder and file name
+    const s3Key = `audio/${fileName}`;
+    console.log(`Generated S3 key: ${s3Key}`);
 
-    // Upload the audio file to S3
+    // Upload audio to S3
     const command = new PutObjectCommand({
-      Bucket: BUCKET_NAME, // Use the correct bucket name
-      Key: s3Key,          // S3 key for the file
-      Body: elevenLabsResponse.data, // Binary audio data
-      ContentType: "audio/mpeg", // Set the correct MIME type for audio files
+      Bucket: BUCKET_NAME,
+      Key: s3Key,
+      Body: elevenLabsResponse.data,
+      ContentType: "audio/mpeg",
     });
-    await s3Client.send(command);
 
-    // Return success response with S3 URL
+    await s3Client.send(command);
+    console.log(`Audio file successfully uploaded to S3: ${s3Key}`);
+
+    // Return success response
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: `https://${BUCKET_NAME}.s3.amazonaws.com/${s3Key}`, // Construct the S3 URL
+        url: `https://${BUCKET_NAME}.s3.amazonaws.com/${s3Key}`,
       }),
     };
   } catch (error: unknown) {
-    const err = error as Error; 
+    const err = error as Error;
+    console.error("An error occurred:", err.message, err.stack);
+
+    // Detailed error response
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({
+        message: "An internal server error occurred.",
+        error: err.message,
+      }),
     };
   }
 };
