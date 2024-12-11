@@ -4,7 +4,7 @@ export const textToSpeechFunction = defineFunction({
   name: "text-to-speech-function",
   entry: "./handler.ts",
   environment: {
-    ELEVENLABS_API_KEY: "sk_002b2744498c19e0f73c89a3ce2ad05d86ea4434f661f5cc",
+    ELEVENLABS_API_KEY: "sk_19f69c8a20e3189095b41d926ce811742d37a376cf75a215",
     BUCKET_NAME: "audio",
   },
 });
