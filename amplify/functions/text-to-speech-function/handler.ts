@@ -1,8 +1,8 @@
-import AWS from "aws-sdk";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const s3 = new AWS.S3();
+const s3Client = new S3Client();
 const BUCKET_NAME = process.env.STORAGE_AMPLIFYTEAMDRIVE_BUCKET_NAME;
 
 export const handler = async (event: any) => {
@@ -26,28 +26,30 @@ export const handler = async (event: any) => {
           "Content-Type": "application/json",
           "xi-api-key": process.env.ELEVENLABS_API_KEY,
         },
-        responseType: "arraybuffer",
+        responseType: "arraybuffer", // Ensure response is received as binary data
       }
     );
 
-    const fileName = `audio/audio_${uuidv4()}.mp3`;
+    // Generate a unique filename for the audio file
+    const fileName = `audio_${uuidv4()}.mp3`;
+    const s3Key = `audio/${fileName}`; // S3 key includes the folder and file name
 
-    // Explicitly type the S3 upload parameters
-    const params: AWS.S3.PutObjectRequest = {
-      Bucket: BUCKET_NAME || '', // Provide a default empty string
-      Key: fileName,
-      Body: elevenLabsResponse.data,
-      ContentType: "audio/mpeg",
-    };
+    // Upload the audio file to S3
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME, // Use the correct bucket name
+      Key: s3Key,          // S3 key for the file
+      Body: elevenLabsResponse.data, // Binary audio data
+      ContentType: "audio/mpeg", // Set the correct MIME type for audio files
+    });
+    await s3Client.send(command);
 
-    // Upload to S3
-    await s3.putObject(params).promise();
-
-    const s3Url = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
-
+    // Return success response with S3 URL
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Audio file saved.", url: s3Url }),
+      body: JSON.stringify({
+        message: "Audio file saved successfully.",
+        url: `https://${BUCKET_NAME}.s3.amazonaws.com/${s3Key}`, // Construct the S3 URL
+      }),
     };
   } catch (error: unknown) {
     const err = error as Error; 
@@ -55,5 +57,5 @@ export const handler = async (event: any) => {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
     };
-  }  
+  }
 };
