@@ -7,8 +7,5 @@ export const storage = defineStorage({
     'audio/*': [
       allow.resource(textToSpeechFunction).to(['read', 'write', 'delete']),
     ],
-    'audio': [
-      allow.resource(textToSpeechFunction).to(['list']), // Optional for listing
-    ],
   }),
 });
