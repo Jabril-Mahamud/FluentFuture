@@ -3,7 +3,7 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 
 const s3 = new AWS.S3();
-const BUCKET_NAME = "audio";
+const BUCKET_NAME = process.env.STORAGE_AMPLIFYTEAMDRIVE_BUCKET_NAME;
 
 export const handler = async (event: any) => {
   try {
@@ -30,17 +30,18 @@ export const handler = async (event: any) => {
       }
     );
 
-    const fileName = `audio_${uuidv4()}.mp3`;
+    const fileName = `audio/audio_${uuidv4()}.mp3`;
+
+    // Explicitly type the S3 upload parameters
+    const params: AWS.S3.PutObjectRequest = {
+      Bucket: BUCKET_NAME || '', // Provide a default empty string
+      Key: fileName,
+      Body: elevenLabsResponse.data,
+      ContentType: "audio/mpeg",
+    };
 
     // Upload to S3
-    await s3
-      .putObject({
-        Bucket: BUCKET_NAME,
-        Key: fileName,
-        Body: elevenLabsResponse.data,
-        ContentType: "audio/mpeg",
-      })
-      .promise();
+    await s3.putObject(params).promise();
 
     const s3Url = `https://${BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
 
@@ -48,7 +49,7 @@ export const handler = async (event: any) => {
       statusCode: 200,
       body: JSON.stringify({ message: "Audio file saved.", url: s3Url }),
     };
-} catch (error: unknown) {
+  } catch (error: unknown) {
     const err = error as Error; 
     return {
       statusCode: 500,
