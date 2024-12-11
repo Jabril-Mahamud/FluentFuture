@@ -15,10 +15,31 @@ export const handler = async (event: any) => {
       throw new Error("S3 bucket name is not set in environment variables.");
     }
 
-    // Parse and validate request body
-    const body = JSON.parse(event.body);
-    const { text, voiceId = "default" } = body;
+    // Check if the event body exists and is a valid JSON string
+    if (!event.body) {
+      throw new Error("No body in the event.");
+    }
 
+    let body: any;
+    try {
+      // Check for base64 encoding, decode if necessary
+      if (event.isBase64Encoded) {
+        body = JSON.parse(Buffer.from(event.body, 'base64').toString('utf-8'));
+      } else {
+        body = JSON.parse(event.body);
+      }
+    } catch (parseError: unknown) {
+      // Type assertion to Error
+      const error = parseError as Error;
+      console.error("Error parsing event body:", error.message);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Invalid JSON in request body." }),
+      };
+    }
+
+    // Validate the body content
+    const { text, voiceId = "default" } = body;
     if (!text) {
       return {
         statusCode: 400,
