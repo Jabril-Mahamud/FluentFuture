@@ -2,11 +2,13 @@ import { defineStorage } from '@aws-amplify/backend';
 import { textToSpeechFunction } from '../functions/text-to-speech-function/resource';
 
 export const storage = defineStorage({
-  name: 'audio',
+  name: 'audio', // Storage name (matches your bucket prefix)
   access: (allow) => ({
     'audio/*': [
-      allow.resource(textToSpeechFunction).to(['read', 'write', 'delete'])
-    ]
-  })
+      allow.resource(textToSpeechFunction).to(['read', 'write', 'delete']),
+    ],
+    'audio': [
+      allow.resource(textToSpeechFunction).to(['list']), // Optional for listing
+    ],
+  }),
 });
-
