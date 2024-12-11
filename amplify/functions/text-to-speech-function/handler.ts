@@ -9,7 +9,9 @@ export const handler = async (event: any) => {
   try {
     // Validate environment variables
     if (!process.env.ELEVENLABS_API_KEY) {
-      throw new Error("ElevenLabs API key is not set in environment variables.");
+      throw new Error(
+        "ElevenLabs API key is not set in environment variables."
+      );
     }
     if (!BUCKET_NAME) {
       throw new Error("S3 bucket name is not set in environment variables.");
@@ -24,7 +26,7 @@ export const handler = async (event: any) => {
     try {
       // Check for base64 encoding, decode if necessary
       if (event.isBase64Encoded) {
-        body = JSON.parse(Buffer.from(event.body, 'base64').toString('utf-8'));
+        body = JSON.parse(Buffer.from(event.body, "base64").toString("utf-8"));
       } else {
         body = JSON.parse(event.body);
       }
@@ -43,7 +45,9 @@ export const handler = async (event: any) => {
     if (!text) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: "Text is required in the request body." }),
+        body: JSON.stringify({
+          message: "Text is required in the request body.",
+        }),
       };
     }
 
@@ -72,10 +76,12 @@ export const handler = async (event: any) => {
 
     // Upload audio to S3
     const command = new PutObjectCommand({
-      Bucket: BUCKET_NAME,
+      Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
       Body: elevenLabsResponse.data,
       ContentType: "audio/mpeg",
+      // Explicitly set ACL or use bucket policy permissions
+      ACL: "private",
     });
 
     await s3Client.send(command);
@@ -86,19 +92,18 @@ export const handler = async (event: any) => {
       statusCode: 200,
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: `https://${BUCKET_NAME}.s3.amazonaws.com/${s3Key}`,
+        url: `https://s3.amazonaws.com/${process.env.S3_BUCKET_NAME}/${s3Key}`,
       }),
     };
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("An error occurred:", err.message, err.stack);
-
-    // Detailed error response
+    console.error("Detailed error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: "An internal server error occurred.",
+        message: "Internal server error",
         error: err.message,
+        stack: err.stack,
       }),
     };
   }
