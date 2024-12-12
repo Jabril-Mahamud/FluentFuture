@@ -33,16 +33,13 @@ export default function TextToSpeechConverter() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Optional: You can manually add CORS headers here to test
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
         },
         body: JSON.stringify({
           text,
-          voiceId: "Pw7NjARk1Tw61eca5OiP"
+          voiceId: "Pw7NjARk1Tw61eca5OiP", // Static for now, dynamic if needed
         }),
       });
+      
     
       // Log full response details
       console.log('Full Response:', {
