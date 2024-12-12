@@ -1,8 +1,6 @@
-"use client";
-
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Mic, Play, Waves } from "lucide-react";
+'use client'
+import React, { useState } from "react";
+import { Mic, Play, Waves, Download, AlertTriangle } from "lucide-react";
 
 export default function TextToSpeechConverter() {
   const [text, setText] = useState("");
@@ -13,7 +11,7 @@ export default function TextToSpeechConverter() {
   const API_ENDPOINT = "https://snt43qq2y3.execute-api.eu-west-2.amazonaws.com/default/amplify-d3vjzia12splxy-de-texttospeechfunctionlamb-GAKgc6zxWSDb";
 
   const handleTextToSpeech = async () => {
-    // Input validation
+    // Validate input
     if (!text.trim()) {
       setError("Please enter some text to convert to speech.");
       return;
@@ -24,34 +22,18 @@ export default function TextToSpeechConverter() {
     setAudioUrl(null);
   
     try {
-      // Log the payload being sent
-      console.log("Sending request with payload:", {
-        text,
-        voiceId: "Pw7NjARk1Tw61eca5OiP",
-      });
-  
-      // Make the POST request
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text, // Ensure this is populated
-          voiceId: "Pw7NjARk1Tw61eca5OiP", // Adjust dynamically if needed
+          text,
+          voiceId: "Pw7NjARk1Tw61eca5OiP", 
         }),
       });
   
-      // Debug the response
-      console.log("Full Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
-  
-      // Check for success
       const responseText = await response.text();
-      console.log("Response Body:", responseText);
   
       if (!response.ok) {
         throw new Error(
@@ -59,7 +41,6 @@ export default function TextToSpeechConverter() {
         );
       }
   
-      // Parse JSON and extract audio URL
       const data = JSON.parse(responseText);
   
       if (data.url) {
@@ -78,77 +59,121 @@ export default function TextToSpeechConverter() {
       setIsLoading(false);
     }
   };
-  
+
+  const handleDownload = () => {
+    if (audioUrl) {
+      const link = document.createElement('a');
+      link.href = audioUrl;
+      link.download = 'generated-audio.mp3';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center p-6">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white/80 backdrop-blur-lg shadow-2xl rounded-2xl p-8 w-full max-w-md space-y-6"
-      >
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-indigo-800 mb-2 flex items-center justify-center gap-3">
-            <Waves className="text-purple-600" />
-            Text to Speech
-            <Mic className="text-purple-600" />
-          </h1>
-          <p className="text-gray-500">Convert your text into lifelike audio</p>
-        </div>
+    <main>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'stretch', 
+        gap: '1rem',
+        width: '100%',
+        maxWidth: '400px'
+      }}>
+        <h1 style={{ 
+          textAlign: 'center', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          gap: '10px',
+          color: 'white'
+        }}>
+          <Waves color="white" />
+          Text to Speech
+          <Mic color="white" />
+        </h1>
+
+        {error && (
+          <div style={{
+            backgroundColor: '#ffdddd',
+            color: '#ff0000',
+            padding: '10px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <AlertTriangle color="#ff0000" />
+            {error}
+          </div>
+        )}
 
         <textarea 
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter text to convert to speech..."
-          className="w-full h-32 p-4 border-2 border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all resize-none"
+          style={{
+            width: '100%',
+            height: '200px',
+            padding: '10px',
+            borderRadius: '8px',
+            border: '1px solid #646cff',
+            resize: 'none'
+          }}
         />
 
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl"
-          >
-            {error}
-          </motion.div>
-        )}
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button 
           onClick={handleTextToSpeech}
           disabled={isLoading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            opacity: isLoading ? 0.5 : 1
+          }}
         >
-          {isLoading ? (
-            <>
-              <span className="animate-pulse">Generating</span>
-              <Waves className="animate-spin" />
-            </>
-          ) : (
-            <>
-              Generate Audio
-              <Play />
-            </>
-          )}
-        </motion.button>
+          {isLoading ? 'Generating' : 'Generate Audio'}
+          {isLoading ? <Waves /> : <Play />}
+        </button>
 
         {audioUrl && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 bg-indigo-50 rounded-xl p-4 flex items-center justify-between"
-          >
-            <span className="text-indigo-700 font-medium">Audio Generated</span>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            backgroundColor: '#dadbf9',
+            padding: '10px',
+            borderRadius: '8px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span>Audio Generated</span>
+              <button 
+                onClick={handleDownload}
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '5px 10px'
+                }}
+              >
+                Download
+              </button>
+            </div>
             <audio 
               src={audioUrl} 
               controls 
-              className="audio-player"
+              style={{ width: '100%' }}
             />
-          </motion.div>
+          </div>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </main>
   );
 }
