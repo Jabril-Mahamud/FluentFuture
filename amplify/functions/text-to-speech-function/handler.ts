@@ -7,6 +7,20 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle CORS preflight request
+    if (event.httpMethod === "OPTIONS") {
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*', // Allow all origins
+          'Access-Control-Allow-Methods': 'OPTIONS,POST', // Allowed methods
+          'Access-Control-Allow-Headers': 'Content-Type', // Allowed headers
+        },
+        body: JSON.stringify({ message: "CORS preflight response" }),
+      };
+    }
+
     // Validate environment variables
     if (!process.env.ELEVENLABS_API_KEY) {
       throw new Error("ElevenLabs API key is not set in environment variables.");
@@ -24,7 +38,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return {
         statusCode: 400,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*', // CORS support
         },
         body: JSON.stringify({
           message: "Text is required in the request body.",
@@ -33,9 +48,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const { text, voiceId = "default" } = body;
-
-    // Log the incoming request for debugging
-    console.log("Received request:", { text, voiceId });
 
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
@@ -50,13 +62,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
     );
 
-    console.log("ElevenLabs API response received.");
-
     // Generate a unique filename and S3 key
     const fileName = `audio_${uuidv4()}.mp3`;
     const s3Key = `audio/${fileName}`;
-
-    console.log(`Generated S3 key: ${s3Key}`);
 
     // Upload audio to S3
     const command = new PutObjectCommand({
@@ -69,16 +77,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     await s3Client.send(command);
 
-    console.log(`Audio file successfully uploaded to S3: ${s3Key}`);
-
     // Return success response
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // Allow all origins
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', // Methods allowed
-        'Access-Control-Allow-Headers': 'Content-Type', // Headers allowed
+        'Access-Control-Allow-Origin': '*', // CORS support
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
@@ -88,12 +92,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
   } catch (error) {
     const err = error as Error;
-    console.error("Detailed error:", err);
-
     return {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*', // CORS support
       },
       body: JSON.stringify({
         message: "Internal server error",
