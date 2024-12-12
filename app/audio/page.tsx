@@ -24,56 +24,61 @@ export default function TextToSpeechConverter() {
     setAudioUrl(null);
   
     try {
-      console.log('Sending request with payload:', {
+      // Log the payload being sent
+      console.log("Sending request with payload:", {
         text,
-        voiceId: "Pw7NjARk1Tw61eca5OiP"
+        voiceId: "Pw7NjARk1Tw61eca5OiP",
       });
   
+      // Make the POST request
       const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text,
-          voiceId: "Pw7NjARk1Tw61eca5OiP", // Static for now, dynamic if needed
+          text, // Ensure this is populated
+          voiceId: "Pw7NjARk1Tw61eca5OiP", // Adjust dynamically if needed
         }),
       });
-      
-    
-      // Log full response details
-      console.log('Full Response:', {
+  
+      // Debug the response
+      console.log("Full Response:", {
         status: response.status,
         statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
+        headers: Object.fromEntries(response.headers.entries()),
       });
-    
-      // Try to get response text even if not OK
+  
+      // Check for success
       const responseText = await response.text();
-      console.log('Response Body:', responseText);
-    
+      console.log("Response Body:", responseText);
+  
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${responseText}`
+        );
       }
-    
-      // Parse response
+  
+      // Parse JSON and extract audio URL
       const data = JSON.parse(responseText);
-      
-      if (data.audioUrl) {
-        setAudioUrl(data.audioUrl);
+  
+      if (data.url) {
+        setAudioUrl(data.url);
       } else {
         throw new Error("No audio URL returned in the response");
       }
     } catch (err) {
       console.error("Detailed Error:", err);
-      setError(err instanceof Error 
-        ? `Network or server error: ${err.message}` 
-        : "An unexpected error occurred during audio generation."
+      setError(
+        err instanceof Error
+          ? `Network or server error: ${err.message}`
+          : "An unexpected error occurred during audio generation."
       );
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center p-6">

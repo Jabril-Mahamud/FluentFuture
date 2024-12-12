@@ -1,21 +1,23 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   try {
     // Handle CORS preflight request
     if (event.httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // Allow all origins
-          'Access-Control-Allow-Methods': 'OPTIONS,POST', // Allowed methods
-          'Access-Control-Allow-Headers': 'Content-Type', // Allowed headers
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "OPTIONS,POST",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
         body: JSON.stringify({ message: "CORS preflight response" }),
       };
@@ -25,29 +27,27 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!process.env.ELEVENLABS_API_KEY) {
       throw new Error("ElevenLabs API key is not set in environment variables.");
     }
-
     if (!process.env.S3_BUCKET_NAME) {
       throw new Error("S3 bucket name is not set in environment variables.");
     }
 
-    // Safely parse the incoming event body
+    // Parse and validate the request body
     const body = event.body ? JSON.parse(event.body) : null;
 
-    // Validate request payload
-    if (!body || !body.text) {
+    if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string") {
       return {
         statusCode: 400,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // CORS support
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          message: "Text is required in the request body.",
+          message: "Invalid request. 'text' and 'voiceId' are required in the body.",
         }),
       };
     }
 
-    const { text, voiceId = "default" } = body;
+    const { text, voiceId } = body;
 
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
@@ -81,22 +81,21 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // CORS support
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
         url: `https://s3.amazonaws.com/${process.env.S3_BUCKET_NAME}/${s3Key}`,
       }),
     };
-
   } catch (error) {
     const err = error as Error;
     return {
       statusCode: 500,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // CORS support
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
         message: "Internal server error",
