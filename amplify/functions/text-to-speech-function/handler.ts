@@ -76,7 +76,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // CORS support
+        'Access-Control-Allow-Origin': '*', // Allow all origins
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', // Methods allowed
+        'Access-Control-Allow-Headers': 'Content-Type', // Headers allowed
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",

@@ -32,7 +32,6 @@ export default function TextToSpeechConverter() {
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           // Optional: You can manually add CORS headers here to test
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
