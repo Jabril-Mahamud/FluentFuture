@@ -6,6 +6,7 @@ export const storage = defineStorage({
   access: (allow) => ({
     'audio/*': [
       allow.resource(textToSpeechFunction).to(['read', 'write', 'delete']),
+      allow.authenticated.to(['read', 'write', 'delete'])
     ],
   }),
 });
