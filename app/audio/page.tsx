@@ -44,7 +44,15 @@ export default function TextToSpeechConverter() {
       const data = JSON.parse(responseText);
   
       if (data.url) {
-        setAudioUrl(data.url);
+        // Convert S3 URL to public URL and ensure proper encoding
+        const s3Url = data.url;
+        const publicUrl = s3Url.replace(
+          'https://s3.eu-west-2.amazonaws.com',
+          'https://s3-eu-west-2.amazonaws.com'
+        );
+        // Ensure URL is properly encoded
+        const encodedUrl = encodeURI(decodeURI(publicUrl));
+        setAudioUrl(encodedUrl);
       } else {
         throw new Error("No audio URL returned in the response");
       }
