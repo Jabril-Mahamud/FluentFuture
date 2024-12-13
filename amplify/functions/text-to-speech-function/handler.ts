@@ -3,7 +3,9 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+});
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -86,7 +88,7 @@ export const handler = async (
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: `https://s3.amazonaws.com/${process.env.S3_BUCKET_NAME}/${s3Key}`,
+        url: `https://${process.env.S3_BUCKET_NAME}/${s3Key}`,
       }),
     };
   } catch (error) {
