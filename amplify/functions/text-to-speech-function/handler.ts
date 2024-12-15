@@ -73,7 +73,6 @@ export const handler = async (
       Key: s3Key,
       Body: elevenLabsResponse.data,
       ContentType: "audio/mpeg",
-      ACL: "public-read", // Make the object publicly readable
     });
 
     await s3Client.send(uploadCommand);
