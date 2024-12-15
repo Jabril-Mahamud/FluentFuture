@@ -37,7 +37,7 @@ export default function HistoryDataGrid() {
       }
   
       setHistorys(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(err.message || "An unexpected error occurred");
     } finally {
