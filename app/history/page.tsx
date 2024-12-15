@@ -6,20 +6,20 @@ import type { Schema } from "../../amplify/data/resource";
 
 const client = generateClient<Schema>();
 
-export default function MessagesList() {
-  const [messages, setMessages] = useState<Schema["Messages"]["type"][]>([]);
+export default function HistoryList() {
+  const [history, setHistorys] = useState<Schema["History"]["type"][]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserAndMessages = async () => {
+    const fetchUserAndHistorys = async () => {
       try {
         // Get the current authenticated user
         const { userId } = await getCurrentUser();
         setUserId(userId);
 
-        // Fetch messages filtered by the user's ID
-        const { data: items, errors } = await client.models.Messages.list({
+        // Fetch Historys filtered by the user's ID
+        const { data: items, errors } = await client.models.History.list({
           filter: {
             userId: { eq: userId }
           }
@@ -30,14 +30,14 @@ export default function MessagesList() {
           throw new Error(errors.map(err => err.message).join(', '));
         }
 
-        setMessages(items);
+        setHistorys(items);
       } catch (err) {
-        console.error("Error fetching messages:", err);
+        console.error("Error fetching Historys:", err);
         setError(err instanceof Error ? err : new Error('An unknown error occurred'));
       }
     };
 
-    fetchUserAndMessages();
+    fetchUserAndHistorys();
   }, []);
 
   if (error) {
@@ -47,11 +47,11 @@ export default function MessagesList() {
   return (
     <div>
       <h1>Message History</h1>
-      {messages.length === 0 ? (
-        <p>No messages found.</p>
+      {history.length === 0 ? (
+        <p>No Historys found.</p>
       ) : (
         <ul>
-          {messages.map(({ id, text }) => (
+          {history.map(({ id, text }) => (
             <li key={id}>{text}</li>
           ))}
         </ul>

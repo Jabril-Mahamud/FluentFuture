@@ -14,7 +14,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.owner()]),
 
 
-  Messages: a
+  History: a
   .model({
     text: a.string().required(),
     audioUrl: a.string(),
@@ -23,7 +23,7 @@ const schema = a.schema({
     status: a.string(),
     createdAt: a.string()
   })
-  .authorization((allow) => [allow.owner(),allow.guest()])
+  .authorization((allow) => [allow.owner()])
 });
 
 export type Schema = ClientSchema<typeof schema>;
