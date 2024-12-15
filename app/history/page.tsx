@@ -23,29 +23,28 @@ export default function HistoryDataGrid() {
   const fetchHistorys = async () => {
     try {
       const { userId } = await getCurrentUser();
-      
+      console.log("Current User ID:", userId);
+  
       const { data, errors } = await client.models.History.list({
-        filter: {
-          userId: { eq: userId }
-        }
+        filter: { userId: { eq: userId } }
       });
-
+  
+      console.log("Data fetched:", data, "Errors:", errors);
+  
       if (errors) {
-        console.error("Errors fetching histories:", errors);
         setError("Failed to fetch history items");
         return;
       }
-
-      if (data) {
-        setHistorys(data);
-      }
+  
+      setHistorys(data || []);
     } catch (err) {
       console.error("Unexpected error:", err);
-      setError("An unexpected error occurred");
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     fetchHistorys();
