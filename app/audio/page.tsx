@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from "react";
 import { Mic, Play, Waves, Download, AlertTriangle } from "lucide-react";
+import { getUrl } from 'aws-amplify/storage';
 
 export default function TextToSpeechConverter() {
   const [text, setText] = useState("");
@@ -44,15 +45,17 @@ export default function TextToSpeechConverter() {
       const data = JSON.parse(responseText);
   
       if (data.url) {
-        // Convert S3 URL to public URL and ensure proper encoding
-        const s3Url = data.url;
-        const publicUrl = s3Url.replace(
-          'https://s3.eu-west-2.amazonaws.com',
-          'https://s3-eu-west-2.amazonaws.com'
-        );
-        // Ensure URL is properly encoded
-        const encodedUrl = encodeURI(decodeURI(publicUrl));
-        setAudioUrl(encodedUrl);
+        // Extract the key from the full S3 URL
+        const s3Key = data.url.split('/').slice(3).join('/');
+
+        // Use getUrl to generate a presigned URL
+        const { url } = await getUrl({
+          key: s3Key,
+          
+        });
+
+        console.log('Presigned URL:', url.toString());
+        setAudioUrl(url.toString());
       } else {
         throw new Error("No audio URL returned in the response");
       }
@@ -175,6 +178,7 @@ export default function TextToSpeechConverter() {
               </button>
             </div>
             <audio 
+              key={audioUrl}
               src={audioUrl} 
               controls 
               style={{ width: '100%' }}

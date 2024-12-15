@@ -1,11 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-});
+const s3Client = new S3Client({});
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -69,15 +68,27 @@ export const handler = async (
     const s3Key = `audio/${fileName}`;
 
     // Upload audio to S3
-    const command = new PutObjectCommand({
+    const uploadCommand = new PutObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
       Body: elevenLabsResponse.data,
       ContentType: "audio/mpeg",
-      ACL: "private",
+      ACL: "public-read", // Make the object publicly readable
     });
 
-    await s3Client.send(command);
+    await s3Client.send(uploadCommand);
+
+    // Generate a public URL
+    const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
+
+    // Alternatively, generate a signed URL with expiration
+    const signedUrlCommand = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: s3Key,
+    });
+    const signedUrl = await getSignedUrl(s3Client, signedUrlCommand, { 
+      expiresIn: 3600 // URL expires in 1 hour
+    });
 
     // Return success response
     return {
@@ -88,7 +99,8 @@ export const handler = async (
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: `https://${process.env.S3_BUCKET_NAME}/${s3Key}`,
+        url: publicUrl, // Public URL
+        signedUrl: signedUrl, // Signed URL with expiration
       }),
     };
   } catch (error) {
@@ -107,5 +119,3 @@ export const handler = async (
     };
   }
 };
-
-// need to get public url
