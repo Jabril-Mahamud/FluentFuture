@@ -1,23 +1,39 @@
 'use client';
 import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
+import { getCurrentUser } from "aws-amplify/auth";
+import { 
+  Table, 
+  TableCell, 
+  TableBody, 
+  TableHead, 
+  TableRow,
+  Flex 
+} from "@aws-amplify/ui-react";
+import "@aws-amplify/ui-react/styles.css";
 import type { Schema } from "../../amplify/data/resource";
 
 const client = generateClient<Schema>();
 
-export default function HistoryList() {
+export default function HistoryDataGrid() {
   const [historys, setHistorys] = useState<Schema["History"]["type"][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistorys = async () => {
     try {
+      const { userId } = await getCurrentUser();
+      
       const { data, errors } = await client.models.History.list({
+        filter: {
+          userId: { eq: userId }
+        }
       });
 
       if (errors) {
         console.error("Errors fetching histories:", errors);
         setError("Failed to fetch history items");
+        return;
       }
 
       if (data) {
@@ -44,26 +60,50 @@ export default function HistoryList() {
   }
 
   return (
-    <div>
+    <Flex direction="column" padding="1rem">
       <h1>History</h1>
       {historys.length === 0 ? (
         <p>No history items found.</p>
       ) : (
-        <ul>
-          {historys.map(({ id, text, audioUrl }) => (
-            <li key={id} className="mb-4">
-              <div className="bg-gray-100 p-3 rounded">
-                <h2 className="font-bold">{text}</h2>
-                {audioUrl && (
-                  <audio controls src={audioUrl} className="mt-2">
-                    Your browser does not support the audio element.
-                  </audio>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <Table highlightOnHover>
+          <TableHead>
+            <TableRow>
+              <TableCell as="th">Text</TableCell>
+              <TableCell as="th">Language</TableCell>
+              <TableCell as="th">Status</TableCell>
+              <TableCell as="th">Created At</TableCell>
+              <TableCell as="th">Audio</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {historys.map((history) => (
+              <TableRow key={history.id}>
+                <TableCell>{history.text}</TableCell>
+                <TableCell>{history.language || 'N/A'}</TableCell>
+                <TableCell>{history.status || 'N/A'}</TableCell>
+                <TableCell>
+                  {history.createdAt 
+                    ? new Date(history.createdAt).toLocaleString() 
+                    : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  {history.audioUrl ? (
+                    <audio 
+                      controls 
+                      src={history.audioUrl}
+                      style={{ maxWidth: '200px' }}
+                    >
+                      Your browser does not support audio.
+                    </audio>
+                  ) : (
+                    'No Audio'
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
-    </div>
+    </Flex>
   );
 }

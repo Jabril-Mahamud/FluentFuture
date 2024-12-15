@@ -24,11 +24,12 @@ const schema = a.schema({
     status: a.string(),
     createdAt: a.string()
   })
-  .authorization((allow) => [allow.publicApiKey()]),
+  .authorization((allow) => [allow.owner()]),
 
   Test: a
   .model({
-    test: a.string()
+    id: a.id(),
+    text: a.string()
   })
   .authorization((allow) => [allow.owner()]),
 });
