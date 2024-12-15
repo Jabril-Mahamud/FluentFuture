@@ -24,11 +24,16 @@ export default function TextToSpeechConverter() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // API endpoint for text-to-speech conversion
-  const API_ENDPOINT =
-    "https://snt43qq2y3.execute-api.eu-west-2.amazonaws.com/default/amplify-d3vjzia12splxy-de-texttospeechfunctionlamb-GAKgc6zxWSDb";
+  // Fetch API endpoint from environment variables
+  const API_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
   const handleTextToSpeech = async () => {
+    // Validate API_ENDPOINT
+    if (!API_ENDPOINT) {
+      setError("API endpoint is not configured. Please check your environment setup.");
+      return;
+    }
+
     // Validate input
     if (!text.trim()) {
       setError("Please enter some text to convert to speech.");
