@@ -1,5 +1,4 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import test from "node:test";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -14,24 +13,23 @@ const schema = a.schema({
     })
     .authorization((allow) => [allow.owner()]),
 
-
   History: a
-  .model({
-    text: a.string().required(),
-    audioUrl: a.string(),
-    userId: a.id(),
-    language: a.string(),
-    status: a.string(),
-    createdAt: a.string()
-  })
-  .authorization((allow) => [allow.owner()]),
+    .model({
+      text: a.string().required(),
+      audioUrl: a.string(),
+      userId: a.id(),
+      language: a.string(),
+      status: a.string(),
+      createdAt: a.string(),
+    })
+    .authorization((allow) => [allow.owner()]),
 
   Test: a
-  .model({
-    id: a.id(),
-    text: a.string()
-  })
-  .authorization((allow) => [allow.owner()]),
+    .model({
+      id: a.id(),
+      text: a.string(),
+    })
+    .authorization((allow) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -39,7 +37,7 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: 'userPool',
+    defaultAuthorizationMode: "userPool",
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },

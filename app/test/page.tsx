@@ -1,34 +1,58 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 
+// Explicitly type the client
 const client = generateClient<Schema>();
 
 export default function TestManagement() {
-  const [tests, setTests] = useState<Schema['Test'][]>([]);
+  // Use the more precise TestModel type
+  const [tests, setTests] = useState<Schema["Test"]["type"][]>([]);
   const [newTestText, setNewTestText] = useState('');
-  const [editingTest, setEditingTest] = useState<Schema['Test'] | null>(null);
+  const [editingTest, setEditingTest] = useState<Schema["Test"]["type"] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all tests
-  const fetchTests = async () => {
+  // Fetch all tests with improved error handling
+  const fetchTests = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+
     try {
       const { data, errors } = await client.models.Test.list();
       
-      if (errors) {
-        setError('Failed to fetch tests');
-        console.error(errors);
-      } else {
+      if (data) {
         setTests(data);
+      } 
+      
+      if (errors) {
+        const errorMessages = errors.map(err => err.message).join(', ');
+        setError(errorMessages || 'Unknown error occurred');
+        console.error(errors);
       }
     } catch (err) {
-      setError('Error fetching tests');
+      const errorMessage = err instanceof Error ? err.message : 'Error fetching tests';
+      setError(errorMessage);
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  // Handle input changes for both new and editing tests
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    
+    if (editingTest) {
+      // When editing an existing test
+      setEditingTest({
+        ...editingTest, 
+        text: inputValue
+      });
+    } else {
+      // When creating a new test
+      setNewTestText(inputValue);
     }
   };
 
@@ -46,7 +70,8 @@ export default function TestManagement() {
       setNewTestText('');
       await fetchTests();
     } catch (err) {
-      setError('Failed to create test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create test';
+      setError(errorMessage);
       console.error(err);
     }
   };
@@ -58,12 +83,13 @@ export default function TestManagement() {
     try {
       await client.models.Test.update({
         id: editingTest.id,
-        text: editingTest.text
+        text: editingTest.text || ''
       });
       setEditingTest(null);
       await fetchTests();
     } catch (err) {
-      setError('Failed to update test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update test';
+      setError(errorMessage);
       console.error(err);
     }
   };
@@ -74,15 +100,27 @@ export default function TestManagement() {
       await client.models.Test.delete({ id });
       await fetchTests();
     } catch (err) {
-      setError('Failed to delete test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete test';
+      setError(errorMessage);
       console.error(err);
     }
   };
 
+  // Auto-clear errors after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   // Fetch tests on component mount
   useEffect(() => {
     fetchTests();
-  }, []);
+  }, [fetchTests]);
 
   return (
     <div className="max-w-2xl mx-auto p-4">
@@ -92,12 +130,8 @@ export default function TestManagement() {
       <div className="flex mb-4">
         <input
           type="text"
-          value={editingTest ? editingTest.text : newTestText}
-          onChange={(e) => 
-            editingTest 
-              ? setEditingTest({...editingTest, text: e.target.value}) 
-              : setNewTestText(e.target.value)
-          }
+          value={editingTest ? editingTest.text || '' : newTestText}
+          onChange={handleInputChange}
           placeholder="Enter test text"
           className="flex-grow p-2 border rounded-l"
         />
@@ -164,7 +198,7 @@ export default function TestManagement() {
                       Edit
                     </button>
                     <button 
-                      onClick={() => deleteTest(test.id)}
+                      onClick={() => deleteTest(test.id || "")}
                       className="bg-red-500 text-white px-2 py-1 rounded"
                     >
                       Delete
