@@ -1,7 +1,8 @@
 'use client'
 import React, { useState } from "react";
-import { Mic, Play, Waves, Download, AlertTriangle } from "lucide-react";
-import { getUrl } from 'aws-amplify/storage';
+import { Flex, Text, TextAreaField, Button, Alert, View } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+import { Mic, Play, Waves, Download, AlertTriangle, HelpCircle } from "lucide-react";
 
 export default function TextToSpeechConverter() {
   const [text, setText] = useState("");
@@ -9,6 +10,7 @@ export default function TextToSpeechConverter() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // API endpoint for text-to-speech conversion
   const API_ENDPOINT = "https://snt43qq2y3.execute-api.eu-west-2.amazonaws.com/default/amplify-d3vjzia12splxy-de-texttospeechfunctionlamb-GAKgc6zxWSDb";
 
   const handleTextToSpeech = async () => {
@@ -44,18 +46,11 @@ export default function TextToSpeechConverter() {
   
       const data = JSON.parse(responseText);
   
-      if (data.url) {
-        // Extract the key from the full S3 URL
-        const s3Key = data.url.split('/').slice(3).join('/');
-
-        // Use getUrl to generate a presigned URL
-        const { url } = await getUrl({
-          key: s3Key,
-          
-        });
-
-        console.log('Presigned URL:', url.toString());
-        setAudioUrl(url.toString());
+      // Check for signedUrl first, then fall back to url
+      if (data.signedUrl) {
+        setAudioUrl(data.signedUrl);
+      } else if (data.url) {
+        setAudioUrl(data.url);
       } else {
         throw new Error("No audio URL returned in the response");
       }
@@ -83,109 +78,121 @@ export default function TextToSpeechConverter() {
   };
 
   return (
-    <main>
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'stretch', 
-        gap: '1rem',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h1 style={{ 
-          textAlign: 'center', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          gap: '10px',
-          color: 'white'
-        }}>
-          <Waves color="white" />
-          Text to Speech
-          <Mic color="white" />
-        </h1>
+    <View 
+      as="main" 
+      width="100%" 
+      maxWidth="500px" 
+      margin="0 auto"
+      padding="1rem"
+    >
+      <Flex 
+        direction="column" 
+        gap="1rem"
+        alignItems="stretch"
+      >
+        <Flex 
+          justifyContent="center" 
+          alignItems="center" 
+          gap="0.5rem"
+        >
+          <Waves color="currentColor" />
+          <Text 
+            variation="primary" 
+            as="h1" 
+            fontSize="1.5rem" 
+            fontWeight="bold"
+          >
+            Text to Speech Converter
+          </Text>
+          <Mic color="currentColor" />
+        </Flex>
 
         {error && (
-          <div style={{
-            backgroundColor: '#ffdddd',
-            color: '#ff0000',
-            padding: '10px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <AlertTriangle color="#ff0000" />
-            {error}
-          </div>
+          <Alert 
+            variation="error" 
+            isDismissible={false}
+          >
+            <Flex alignItems="center" gap="0.5rem">
+              <AlertTriangle />
+              {error}
+            </Flex>
+          </Alert>
         )}
 
-        <textarea 
+        <TextAreaField
+          label="Enter Text"
+          placeholder="Type the text you want to convert to speech..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Enter text to convert to speech..."
-          style={{
-            width: '100%',
-            height: '200px',
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px solid #646cff',
-            resize: 'none'
-          }}
+          rows={6}
+          variation="quiet"
+          // Add white background and clear contrast
+          backgroundColor="white"
+          border="1px solid #CCCCCC"
+          borderRadius="0.5rem"
+          padding="0.5rem"
+          // Accessibility improvements
+          aria-describedby="text-input-help"
         />
-
-        <button 
-          onClick={handleTextToSpeech}
-          disabled={isLoading}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            opacity: isLoading ? 0.5 : 1
-          }}
+        <Text 
+          id="text-input-help" 
+          variation="secondary" 
+          fontSize="0.875rem"
+          display="flex"
+          alignItems="center"
+          gap="0.25rem"
         >
-          {isLoading ? 'Generating' : 'Generate Audio'}
-          {isLoading ? <Waves /> : <Play />}
-        </button>
+          <HelpCircle size={16} />
+          Tip: Speak clearly and simply. This helps create better audio.
+        </Text>
+
+        <Button 
+          variation="primary"
+          onClick={handleTextToSpeech}
+          isLoading={isLoading}
+          loadingText="Generating Audio"
+          // Ensure button is always accessible
+          aria-live="polite"
+        >
+          <Flex alignItems="center" gap="0.5rem">
+            {isLoading ? <Waves /> : <Play />}
+            {isLoading ? 'Generating' : 'Generate Audio'}
+          </Flex>
+        </Button>
 
         {audioUrl && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            backgroundColor: '#dadbf9',
-            padding: '10px',
-            borderRadius: '8px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <span>Audio Generated</span>
-              <button 
+          <View 
+            backgroundColor="secondary.10" 
+            padding="1rem" 
+            borderRadius="0.5rem"
+          >
+            <Flex 
+              justifyContent="space-between" 
+              alignItems="center"
+              marginBottom="0.5rem"
+            >
+              <Text variation="success">Audio Generated Successfully</Text>
+              <Button 
+                variation="link"
                 onClick={handleDownload}
-                style={{
-                  backgroundColor: '#1a1a1a',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '5px 10px'
-                }}
+                aria-label="Download generated audio"
               >
-                Download
-              </button>
-            </div>
+                <Flex alignItems="center" gap="0.5rem">
+                  <Download size={16} />
+                  Download
+                </Flex>
+              </Button>
+            </Flex>
             <audio 
               key={audioUrl}
               src={audioUrl} 
               controls 
               style={{ width: '100%' }}
+              aria-label="Generated speech audio"
             />
-          </div>
+          </View>
         )}
-      </div>
-    </main>
+      </Flex>
+    </View>
   );
 }
