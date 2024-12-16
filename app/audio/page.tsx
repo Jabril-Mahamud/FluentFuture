@@ -17,12 +17,15 @@ import {
   AlertTriangle,
   HelpCircle,
 } from "lucide-react";
+import Image from 'next/image'; 
+import { VOICE_OPTIONS, Voice } from '../../lib/voiceOptions';
 
 export default function TextToSpeechConverter() {
   const [text, setText] = useState("");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>(VOICE_OPTIONS[0].id);
 
   // Fetch API endpoint from environment variables
   const API_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
@@ -52,7 +55,7 @@ export default function TextToSpeechConverter() {
         },
         body: JSON.stringify({
           text,
-          voiceId: "Pw7NjARk1Tw61eca5OiP",
+          voiceId: selectedVoiceId, // Use the selected voice ID
         }),
       });
 
@@ -97,8 +100,12 @@ export default function TextToSpeechConverter() {
     }
   };
 
+  const handleVoiceChange = (voiceId: string) => {
+    setSelectedVoiceId(voiceId);
+  };
+
   return (
-    <View
+    <Flex
       as="main"
       width="100%"
       maxWidth="500px"
@@ -106,7 +113,7 @@ export default function TextToSpeechConverter() {
       padding="1rem"
     >
       <Flex direction="column" gap="1rem" alignItems="stretch">
-        <Flex justifyContent="center" alignItems="center" gap="0.5rem">
+        <Flex justifyContent="center" alignItems="center" gap="0.5rem" >
           <Waves color="currentColor" />
           <Text variation="primary" as="h1" fontSize="1.5rem" fontWeight="bold">
             Text to Speech Converter
@@ -123,6 +130,41 @@ export default function TextToSpeechConverter() {
           </Alert>
         )}
 
+        {/* Voice Selection */}
+        <Flex gap="1rem" justifyContent="center" marginBottom="1rem">
+          {VOICE_OPTIONS.map((voice) => (
+            <Button
+              key={voice.id}
+              variation={selectedVoiceId === voice.id ? 'primary' : 'outline'}
+              onClick={() => handleVoiceChange(voice.id)}
+              padding="0.5rem"
+              borderRadius="0.5rem"
+            >
+              <Flex direction="column" alignItems="center" gap="0.5rem">
+                {typeof voice.icon === 'string' ? (
+                  <img 
+                    src={voice.icon} 
+                    alt={`${voice.name} voice icon`} 
+                    style={{ width: 64, height: 64, borderRadius: '50%' }} 
+                  />
+                ) : (
+                  <Image
+                    src={voice.icon}
+                    alt={`${voice.name} voice icon`}
+                    width={64}
+                    height={64}
+                    style={{ borderRadius: '50%' }}
+                  />
+                )}
+                <Text>{voice.name}</Text>
+                <Text variation="secondary" fontSize="0.75rem">
+                  {voice.description}
+                </Text>
+              </Flex>
+            </Button>
+          ))}
+        </Flex>
+
         <TextAreaField
           label="Enter Text"
           placeholder="Type the text you want to convert to speech..."
@@ -130,12 +172,10 @@ export default function TextToSpeechConverter() {
           onChange={(e) => setText(e.target.value)}
           rows={6}
           variation="quiet"
-          // Add white background and clear contrast
           backgroundColor="white"
           border="1px solid #CCCCCC"
           borderRadius="0.5rem"
           padding="0.5rem"
-          // Accessibility improvements
           aria-describedby="text-input-help"
         />
         <Flex id="text-input-help" alignItems="center" gap="0.25rem">
@@ -150,7 +190,6 @@ export default function TextToSpeechConverter() {
           onClick={handleTextToSpeech}
           isLoading={isLoading}
           loadingText="Generating Audio"
-          // Ensure button is always accessible
           aria-live="polite"
         >
           <Flex alignItems="center" gap="0.5rem">
@@ -192,6 +231,6 @@ export default function TextToSpeechConverter() {
           </View>
         )}
       </Flex>
-    </View>
+    </Flex>
   );
 }
