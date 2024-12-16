@@ -132,7 +132,7 @@ export default function TextToSpeechConverter() {
           {VOICE_OPTIONS.map((voice) => (
             <Button
               key={voice.id}
-              variation={selectedVoiceId === voice.id ? 'primary' : 'outline'}
+              variation={selectedVoiceId === voice.id ? 'primary' as any : 'default' as any}
               onClick={() => handleVoiceChange(voice.id)}
               padding="0.5rem"
               borderRadius="0.5rem"
