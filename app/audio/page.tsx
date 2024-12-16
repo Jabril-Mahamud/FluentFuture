@@ -27,17 +27,14 @@ export default function TextToSpeechConverter() {
   const [error, setError] = useState<string | null>(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>(VOICE_OPTIONS[0].id);
 
-  // Fetch API endpoint from environment variables
   const API_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
   const handleTextToSpeech = async () => {
-    // Validate API_ENDPOINT
     if (!API_ENDPOINT) {
       setError("API endpoint is not configured. Please check your environment setup.");
       return;
     }
 
-    // Validate input
     if (!text.trim()) {
       setError("Please enter some text to convert to speech.");
       return;
@@ -55,7 +52,7 @@ export default function TextToSpeechConverter() {
         },
         body: JSON.stringify({
           text,
-          voiceId: selectedVoiceId, // Use the selected voice ID
+          voiceId: selectedVoiceId, 
         }),
       });
 
