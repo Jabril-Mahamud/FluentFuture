@@ -6,6 +6,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({});
 
+// could also access api from here https://docs.amplify.aws/nextjs/build-a-backend/data/customize-authz/grant-lambda-function-access-to-api/
+
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
