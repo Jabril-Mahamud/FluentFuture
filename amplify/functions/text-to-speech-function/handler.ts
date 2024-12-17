@@ -3,7 +3,17 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Amplify } from "aws-amplify";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "../../data/resource";
 
+// Configure Amplify (you might need to adjust this based on your specific setup)
+Amplify.configure({
+  // Add your Amplify configuration here
+  // This might include API endpoint, region, etc.
+});
+
+const client = generateClient<Schema>();
 const s3Client = new S3Client({});
 
 export const handler = async (
@@ -35,7 +45,7 @@ export const handler = async (
     // Parse and validate the request body
     const body = event.body ? JSON.parse(event.body) : null;
 
-    if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string") {
+    if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string" || !body.userId) {
       return {
         statusCode: 400,
         headers: {
@@ -43,12 +53,12 @@ export const handler = async (
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          message: "Invalid request. 'text' and 'voiceId' are required in the body.",
+          message: "Invalid request. 'text', 'voiceId', and 'userId' are required in the body.",
         }),
       };
     }
 
-    const { text, voiceId } = body;
+    const { text, voiceId, userId, language = 'en' } = body;
 
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
@@ -89,6 +99,20 @@ export const handler = async (
       expiresIn: 3600 // URL expires in 1 hour
     });
 
+    // Create history record using Amplify Data API
+    const { data: historyRecord, errors } = await client.models.History.create({
+      text,
+      audioUrl: publicUrl,
+      userId,
+      language,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+
+    if (errors) {
+      throw new Error(`Failed to save history: ${JSON.stringify(errors)}`);
+    }
+
     // Return success response
     return {
       statusCode: 200,
@@ -100,6 +124,7 @@ export const handler = async (
         message: "Audio file saved successfully.",
         url: publicUrl, // Public URL
         signedUrl: signedUrl, // Signed URL with expiration
+        history: historyRecord // Return the history record for frontend use
       }),
     };
   } catch (error) {

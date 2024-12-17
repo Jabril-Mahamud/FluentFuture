@@ -13,6 +13,7 @@
     "@aws-sdk/s3-request-presigner": "^3.712.0",
     "@chakra-ui/react": "^3.2.3",
     "@radix-ui/react-slot": "^1.1.0",
+    "@types/aws-lambda": "^8.10.146",
     "aws-amplify": "^6.10.3",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
