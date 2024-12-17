@@ -1,20 +1,18 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { 
+  PutObjectCommand, 
+  S3Client, 
+  GetObjectCommand 
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../../data/resource";
 
-// Configure Amplify (you might need to adjust this based on your specific setup)
-Amplify.configure({
-  // Add your Amplify configuration here
-  // This might include API endpoint, region, etc.
-});
-
-const client = generateClient<Schema>();
+// Initialize clients
 const s3Client = new S3Client({});
+const client = generateClient<Schema>();
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -45,7 +43,11 @@ export const handler = async (
     // Parse and validate the request body
     const body = event.body ? JSON.parse(event.body) : null;
 
-    if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string" || !body.userId) {
+    if (!body || 
+        typeof body.text !== "string" || 
+        typeof body.voiceId !== "string" || 
+        !body.userId
+    ) {
       return {
         statusCode: 400,
         headers: {
@@ -58,7 +60,13 @@ export const handler = async (
       };
     }
 
-    const { text, voiceId, userId, language = 'en' } = body;
+    const { 
+      text, 
+      voiceId, 
+      userId, 
+      language = 'en', 
+      status = 'completed' 
+    } = body;
 
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
@@ -69,7 +77,7 @@ export const handler = async (
           "Content-Type": "application/json",
           "xi-api-key": process.env.ELEVENLABS_API_KEY,
         },
-        responseType: "arraybuffer", // Ensure response is binary
+        responseType: "arraybuffer",
       }
     );
 
@@ -90,7 +98,7 @@ export const handler = async (
     // Generate a public URL
     const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
 
-    // Alternatively, generate a signed URL with expiration
+    // Generate a signed URL with expiration
     const signedUrlCommand = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
@@ -105,7 +113,7 @@ export const handler = async (
       audioUrl: publicUrl,
       userId,
       language,
-      status: 'completed',
+      status,
       createdAt: new Date().toISOString()
     });
 
@@ -122,13 +130,15 @@ export const handler = async (
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: publicUrl, // Public URL
-        signedUrl: signedUrl, // Signed URL with expiration
-        history: historyRecord // Return the history record for frontend use
+        url: publicUrl,
+        signedUrl: signedUrl,
+        history: historyRecord
       }),
     };
   } catch (error) {
     const err = error as Error;
+    console.error("Lambda Error:", err);
+
     return {
       statusCode: 500,
       headers: {
