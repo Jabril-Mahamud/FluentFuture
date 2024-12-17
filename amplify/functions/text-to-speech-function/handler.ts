@@ -3,8 +3,12 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const s3Client = new S3Client({});
+const dynamoDBClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(dynamoDBClient);
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -31,10 +35,12 @@ export const handler = async (
     if (!process.env.S3_BUCKET_NAME) {
       throw new Error("S3 bucket name is not set in environment variables.");
     }
+    if (!process.env.HISTORY_TABLE_NAME) {
+      throw new Error("History table name is not set in environment variables.");
+    }
 
     // Parse and validate the request body
     const body = event.body ? JSON.parse(event.body) : null;
-
     if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string") {
       return {
         statusCode: 400,
@@ -48,7 +54,7 @@ export const handler = async (
       };
     }
 
-    const { text, voiceId } = body;
+    const { text, voiceId, userId } = body;
 
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
@@ -74,20 +80,48 @@ export const handler = async (
       Body: elevenLabsResponse.data,
       ContentType: "audio/mpeg",
     });
-
     await s3Client.send(uploadCommand);
 
     // Generate a public URL
     const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
 
-    // Alternatively, generate a signed URL with expiration
+    // Generate a signed URL with expiration
     const signedUrlCommand = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
     });
-    const signedUrl = await getSignedUrl(s3Client, signedUrlCommand, { 
+    const signedUrl = await getSignedUrl(s3Client, signedUrlCommand, {
       expiresIn: 3600 // URL expires in 1 hour
     });
+
+    // Prepare history record for database
+    const historyRecord = {
+      id: uuidv4(), // Unique ID for the history entry
+      text,
+      voiceId,
+      userId: userId || 'anonymous', // Use userId if provided, otherwise 'anonymous'
+      audioUrl: publicUrl,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      language: body.language || 'English',  //uses English by default
+    };
+
+    // Save history to DynamoDB
+    const putItemCommand = new PutCommand({
+      TableName: process.env.HISTORY_TABLE_NAME,
+      Item: {
+        "id": { S: historyRecord.id },
+        "text": { S: historyRecord.text },
+        "voiceId": { S: historyRecord.voiceId },
+        "userId": { S: historyRecord.userId },
+        "audioUrl": { S: historyRecord.audioUrl },
+        "status": { S: historyRecord.status },
+        "createdAt": { S: historyRecord.createdAt },
+        "language": { S: historyRecord.language }
+      }
+    });
+
+    await docClient.send(putItemCommand);
 
     // Return success response
     return {
@@ -100,6 +134,7 @@ export const handler = async (
         message: "Audio file saved successfully.",
         url: publicUrl, // Public URL
         signedUrl: signedUrl, // Signed URL with expiration
+        historyId: historyRecord.id, // Return the history record ID
       }),
     };
   } catch (error) {
