@@ -1,4 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { textToSpeechFunction } from "../functions/text-to-speech-function/resource";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -22,7 +23,10 @@ const schema = a.schema({
       status: a.string(),
       createdAt: a.string(),
     })
-    .authorization((allow) => [allow.owner()]),
+    .authorization((allow) => [
+      allow.owner(),
+      // need to add allow.resource(textToSpeechFunction).to(['read', 'write', 'delete']) here but it causes an error. Gonna figure it out tmmrw ngl 😭
+    ]),
 
   Test: a
     .model({
