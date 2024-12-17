@@ -135,10 +135,17 @@ export default function TextToSpeechConverter() {
             <Button
               key={voice.id}
               style={{
-                backgroundColor: selectedVoiceId === voice.id ? "#4C8CBF" : "#F0F8FF",
+                backgroundColor:
+                  selectedVoiceId === voice.id ? "#4C8CBF" : "#F0F8FF",
                 color: selectedVoiceId === voice.id ? "#FFFFFF" : "#333333",
-                border: selectedVoiceId === voice.id ? "2px solid #3E7CB1" : "1px solid #CCCCCC",
-                boxShadow: selectedVoiceId === voice.id ? "0 4px 8px rgba(0, 0, 0, 0.2)" : "none",
+                border:
+                  selectedVoiceId === voice.id
+                    ? "2px solid #3E7CB1"
+                    : "1px solid #CCCCCC",
+                boxShadow:
+                  selectedVoiceId === voice.id
+                    ? "0 4px 8px rgba(0, 0, 0, 0.2)"
+                    : "none",
                 transition: "background-color 0.3s ease, box-shadow 0.3s ease",
               }}
               onClick={() => handleVoiceChange(voice.id)}
@@ -198,6 +205,14 @@ export default function TextToSpeechConverter() {
           loadingText="Generating Audio"
           aria-live="polite"
           padding="1rem"
+          style={{
+            backgroundColor: "#4C8CBF", // Match the blue color
+            color: "#FFFFFF", // Ensure text is readable
+            border: "2px solid #3E7CB1", // Slightly darker border for contrast
+            borderRadius: "0.5rem",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Subtle shadow for depth
+            transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+          }}
         >
           <Flex alignItems="center" gap="0.5rem">
             {isLoading ? <Waves /> : <Play />}
