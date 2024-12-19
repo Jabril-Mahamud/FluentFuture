@@ -3,8 +3,10 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { env } from '$amplify/env/text-to-speech-function';
 
 const s3Client = new S3Client({});
+const elevenlabsApiKey = env.API_KEY;
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -22,14 +24,6 @@ export const handler = async (
         },
         body: JSON.stringify({ message: "CORS preflight response" }),
       };
-    }
-
-    // Validate environment variables
-    if (!process.env.ELEVENLABS_API_KEY) {
-      throw new Error("ElevenLabs API key is not set in environment variables.");
-    }
-    if (!process.env.S3_BUCKET_NAME) {
-      throw new Error("S3 bucket name is not set in environment variables.");
     }
 
     // Parse and validate the request body
@@ -57,7 +51,7 @@ export const handler = async (
       {
         headers: {
           "Content-Type": "application/json",
-          "xi-api-key": process.env.ELEVENLABS_API_KEY,
+          "xi-api-key": elevenlabsApiKey,
         },
         responseType: "arraybuffer", // Ensure response is binary
       }
