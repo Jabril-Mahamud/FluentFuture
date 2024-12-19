@@ -1,5 +1,4 @@
 import { defineFunction, secret } from "@aws-amplify/backend";
-import { env } from '$amplify/env/textToSpeechFunction'; // the import is '$amplify/env/<function-name>'
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY as string;
 
