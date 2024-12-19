@@ -6,13 +6,14 @@ import { textToSpeechFunction } from './functions/text-to-speech-function/resour
 import { CorsHttpMethod, HttpApi, HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Stack } from 'aws-cdk-lib';
-
+import { history } from './functions/history/resource';
 
 const backend =defineBackend({
   auth,
   data,
   storage,
-  textToSpeechFunction
+  textToSpeechFunction,
+  history
 });
 
 // Create a new API stack
