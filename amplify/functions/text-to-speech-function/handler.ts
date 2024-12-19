@@ -6,7 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from '$amplify/env/text-to-speech-function';
 
 const s3Client = new S3Client({});
-const elevenlabsApiKey = env.API_KEY;
+const elevenlabsApiKey = env.ELEVENLABS_API_KEY;
 
 export const handler = async (
   event: APIGatewayProxyEvent
