@@ -14,7 +14,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.owner()]),
 
 
-  Messages: a
+  History: a
   .model({
     text: a.string().required(),
     audioUrl: a.string(),
