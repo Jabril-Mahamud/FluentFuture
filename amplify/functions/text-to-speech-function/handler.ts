@@ -1,15 +1,41 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { PutObjectCommand, S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Schema } from "../../data/resource";
+import { generateClient } from 'aws-amplify/api';
 import { env } from '$amplify/env/text-to-speech-function';
 
-const s3Client = new S3Client({});
-const elevenlabsApiKey = env.ELEVENLABS_API_KEY;
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION
+});
+
+interface HistoryItem {
+  text: string;
+  audioUrl: string;
+  userId: string;
+  language: string;
+  status: 'success' | 'failed';
+  createdAt: string;
+}
+
+async function createHistoryRecord(historyItem: HistoryItem) {
+  const historyClient = generateClient<Schema>();
+  try {
+    const result = await historyClient.models.History.create(historyItem);
+    console.log('Successfully created history record:', result);
+    return result;
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error('Error creating history record:', error);
+    throw error;
+  }
+}
 
 export const handler = async (
-  event: APIGatewayProxyEvent
+  event: APIGatewayProxyEvent,
+  context: Context
 ): Promise<APIGatewayProxyResult> => {
   try {
     // Handle CORS preflight request
@@ -20,7 +46,7 @@ export const handler = async (
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "OPTIONS,POST",
-          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
         },
         body: JSON.stringify({ message: "CORS preflight response" }),
       };
@@ -28,7 +54,6 @@ export const handler = async (
 
     // Parse and validate the request body
     const body = event.body ? JSON.parse(event.body) : null;
-
     if (!body || typeof body.text !== "string" || typeof body.voiceId !== "string") {
       return {
         statusCode: 400,
@@ -44,6 +69,15 @@ export const handler = async (
 
     const { text, voiceId } = body;
 
+    // Verify environment variables
+    if (!env.ELEVENLABS_API_KEY) {
+      throw new Error('ELEVENLABS_API_KEY environment variable is not set');
+    }
+
+    if (!env.S3_BUCKET_NAME) {
+      throw new Error('S3_BUCKET_NAME environment variable is not set');
+    }
+
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -51,9 +85,9 @@ export const handler = async (
       {
         headers: {
           "Content-Type": "application/json",
-          "xi-api-key": elevenlabsApiKey,
+          "xi-api-key": env.ELEVENLABS_API_KEY,
         },
-        responseType: "arraybuffer", // Ensure response is binary
+        responseType: "arraybuffer",
       }
     );
 
@@ -63,27 +97,43 @@ export const handler = async (
 
     // Upload audio to S3
     const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: env.S3_BUCKET_NAME,
       Key: s3Key,
       Body: elevenLabsResponse.data,
       ContentType: "audio/mpeg",
     });
-
     await s3Client.send(uploadCommand);
 
     // Generate a public URL
-    const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3Key}`;
+    const publicUrl = `https://${env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
-    // Alternatively, generate a signed URL with expiration
+    // Generate a signed URL with expiration
     const signedUrlCommand = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: env.S3_BUCKET_NAME,
       Key: s3Key,
     });
-    const signedUrl = await getSignedUrl(s3Client, signedUrlCommand, { 
-      expiresIn: 3600 // URL expires in 1 hour
+    const signedUrl = await getSignedUrl(s3Client, signedUrlCommand, {
+      expiresIn: 3600
     });
 
-    // Return success response
+    // Get user ID from Cognito identity
+    const userId = event.requestContext?.authorizer?.iam?.cognitoIdentity?.identityId;
+    if (!userId) {
+      throw new Error('User ID not found in request context');
+    }
+
+    // Create and save history record
+    const historyItem: HistoryItem = {
+      text,
+      audioUrl: publicUrl,
+      userId,
+      language: 'en',
+      status: 'success',
+      createdAt: new Date().toISOString(),
+    };
+
+    await createHistoryRecord(historyItem);
+
     return {
       statusCode: 200,
       headers: {
@@ -92,12 +142,14 @@ export const handler = async (
       },
       body: JSON.stringify({
         message: "Audio file saved successfully.",
-        url: publicUrl, // Public URL
-        signedUrl: signedUrl, // Signed URL with expiration
+        url: publicUrl,
+        signedUrl,
       }),
     };
-  } catch (error) {
-    const err = error as Error;
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error('Lambda execution error:', error);
+    
     return {
       statusCode: 500,
       headers: {
@@ -106,8 +158,7 @@ export const handler = async (
       },
       body: JSON.stringify({
         message: "Internal server error",
-        error: err.message,
-        stack: err.stack,
+        error: error.message,
       }),
     };
   }
