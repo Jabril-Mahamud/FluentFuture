@@ -69,15 +69,6 @@ export const handler = async (
 
     const { text, voiceId } = body;
 
-    // Verify environment variables
-    if (!env.ELEVENLABS_API_KEY) {
-      throw new Error('ELEVENLABS_API_KEY environment variable is not set');
-    }
-
-    if (!env.S3_BUCKET_NAME) {
-      throw new Error('S3_BUCKET_NAME environment variable is not set');
-    }
-
     // Call ElevenLabs API
     const elevenLabsResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -85,7 +76,7 @@ export const handler = async (
       {
         headers: {
           "Content-Type": "application/json",
-          "xi-api-key": env.ELEVENLABS_API_KEY,
+          "xi-api-key": process.env.ELEVENLABS_API_KEY,
         },
         responseType: "arraybuffer",
       }
