@@ -13,8 +13,7 @@ export default function HistoryList() {
   const [newHistory, setNewHistory] = useState({
     text: "",
     audioUrl: "",
-    language: "",
-    status: "new",
+    language: "english", // Set default language as 'english'
   });
 
   useEffect(() => {
@@ -56,7 +55,6 @@ export default function HistoryList() {
         text: newHistory.text,
         audioUrl: newHistory.audioUrl || null, // Handle optional fields
         language: newHistory.language || null,
-        status: newHistory.status || "new",
         userId,
         createdAt: new Date().toISOString(),
       });
@@ -83,9 +81,8 @@ export default function HistoryList() {
   
       setNewHistory({
         text: "",
-        audioUrl: "",
-        language: "",
-        status: "new",
+        audioUrl: "", // Reset the audio URL
+        language: "english", // Reset the language to 'english'
       });
     } catch (err) {
       console.error("Error creating new history:", err);
@@ -121,21 +118,6 @@ export default function HistoryList() {
           placeholder="Enter text"
           rows={4}
           cols={50}
-          required
-        />
-        <br />
-        <input
-          type="text"
-          value={newHistory.audioUrl}
-          onChange={(e) => setNewHistory({ ...newHistory, audioUrl: e.target.value })}
-          placeholder="Audio URL (optional)"
-        />
-        <br />
-        <input
-          type="text"
-          value={newHistory.language}
-          onChange={(e) => setNewHistory({ ...newHistory, language: e.target.value })}
-          placeholder="Language"
           required
         />
         <br />

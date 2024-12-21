@@ -20,7 +20,6 @@ const schema = a.schema({
     audioUrl: a.string(),
     userId: a.id(),
     language: a.string(),
-    status: a.string(),
     createdAt: a.string()
   })
   .authorization((allow) => [allow.owner(),allow.guest()])
