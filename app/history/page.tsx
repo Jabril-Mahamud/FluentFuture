@@ -37,28 +37,32 @@ export default function HistoryList() {
       try {
         const { userId } = await getCurrentUser();
         setUserId(userId);
-
+    
         const { data: items, errors } = await client.models.History.list({
           filter: {
             userId: { eq: userId },
           },
         });
-
+    
         if (errors && errors.length > 0) {
           throw new Error(errors.map(err => err.message).join(", "));
         }
-
+    
         // Sort items by createdAt in descending order (newest first)
-        const sortedItems = items.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
+        const sortedItems = items.sort((a, b) => {
+          // Ensure createdAt is a valid string before passing it to new Date()
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : new Date().getTime();
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : new Date().getTime();
+          return dateB - dateA;
+        });
+    
         setHistory(sortedItems);
       } catch (err) {
         console.error("Error fetching history:", err);
         setError(err instanceof Error ? err : new Error("An unknown error occurred"));
       }
     };
+    
 
     fetchUserAndHistory();
   }, []);
@@ -88,9 +92,11 @@ export default function HistoryList() {
       setHistory((prev) => [
         newItem,
         ...prev,
-      ].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      ].sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : new Date().getTime();
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : new Date().getTime();
+        return dateB - dateA;
+      }));
   
       setNewHistory({
         text: "",
@@ -103,8 +109,10 @@ export default function HistoryList() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+  const formatDate = (dateString: string | null | undefined) => {
+    // Ensure dateString is not null or undefined before passing it to new Date()
+    const validDate = dateString ? new Date(dateString) : new Date();
+    return validDate.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -128,8 +136,6 @@ export default function HistoryList() {
       <Card>
         <Flex direction="column" gap="2rem">
           <Heading level={1}>History List</Heading>
-
-          
 
           {/* History Table */}
           {history.length === 0 ? (
