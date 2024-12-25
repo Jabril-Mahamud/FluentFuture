@@ -23,12 +23,12 @@ const client = generateClient<Schema>();
 const VOICE_OPTIONS = [
   {
     name: "Oswald (Male)",
-    id: process.env.ELEVENLABS_VOICE_ID_OSWALD,
+    id: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID_OSWALD,
     description: "A friendly male voice that speaks clearly",
   },
   {
     name: "Dorothy (Female)",
-    id: process.env.ELEVENLABS_VOICE_ID_DOROTHY,
+    id: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID_DOROTHY,
     description: "A warm female voice that speaks gently",
   },
 ];
