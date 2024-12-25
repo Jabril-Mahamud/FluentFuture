@@ -33,10 +33,7 @@ const VOICE_OPTIONS = [
   },
 ];
 
-const ELEVENLABS_API_KEY =
-  typeof window !== "undefined"
-    ? process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY
-    : "";
+const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY
 
 export default function AccessibleTTS() {
   const router = useRouter();
