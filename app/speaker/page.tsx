@@ -50,6 +50,12 @@ export default function AccessibleTTS() {
   );
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log("Oswald Voice ID:", process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID_OSWALD);
+    console.log("Dorothy Voice ID:", process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID_DOROTHY);
+    console.log("Eleven Labs API Key:", process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY);
+  }, []);
+
   // Clean up audio on unmount
   useEffect(() => {
     return () => {
@@ -113,6 +119,10 @@ export default function AccessibleTTS() {
           body: JSON.stringify({ text: text.trim() }),
         }
       );
+
+      console.log("API Response Status:", response.status);
+      const data = await response.json();
+      console.log("API Response Data:", data);
 
       if (!response.ok) {
         throw new Error("Could not create audio. Please try again.");
